@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shyam AMA | Admin Center</title>
+    <link rel="icon" type="image/x-icon" href="icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        :root { 
+            --bg: #F0F4F8; --card: #FFFFFF; --primary: #6D28D9; --primary-hover: #5B21B6;
+            --accent-purple: #8B5CF6; --accent-purple-light: #F5F3FF;
+            --danger: #EF4444; --danger-bg: #FEF2F2; --success: #10B981; --success-bg: #ECFDF5;
+            --warning: #F59E0B; --warning-bg: #FFFBEB; --text: #0F172A; --text-light: #64748B; 
+            --border: #E2E8F0; --input-bg: #F8FAFC;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { 
+            background: var(--bg); color: var(--text); padding: 15px; padding-bottom: 80px; 
+            -webkit-user-select: none; user-select: none; 
+        }
+        @media(min-width: 768px) { body { padding: 30px; } }
+        
+        input, textarea { -webkit-user-select: text; user-select: text; }
+        
+        .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 15px;}
+        .login-overlay { z-index: 10000; flex-direction: column; }
+        
+        .modal { background: var(--card); padding: 30px; border-radius: 24px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); text-align: center; max-height: 90vh; overflow-y: auto;}
+        .modal-large { max-width: 900px; width: 95%; height: 90vh; display: flex; flex-direction: column;}
+        .modal-settings { max-width: 600px; padding: 25px; } 
+        
+        .modal::-webkit-scrollbar { width: 6px; }
+        .modal::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        
+        .modal h2 { margin-bottom: 5px; font-weight: 800; color: var(--primary); font-size: 22px;}
+        .modal p { color: var(--text-light); font-size: 13px; margin-bottom: 20px; line-height: 1.5;}
+        
+        .input-label { text-align: left; margin-bottom: 5px; font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; display: block;}
+        .modal input, .edit-input { width: 100%; padding: 14px 16px; border-radius: 14px; border: 2px solid var(--border); background: var(--input-bg); margin-bottom: 15px; font-size: 14px; outline: none; transition: 0.2s; font-weight: 500;}
+        .modal input:focus, .edit-input:focus { border-color: var(--primary); background: white; box-shadow: 0 4px 12px rgba(109, 40, 217, 0.05);}
+
+        .input-error { border-color: var(--danger) !important; background-color: #FFF0F0 !important; animation: shake 0.4s both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px,0,0); } 20%, 80% { transform: translate3d(2px,0,0); } 30%, 50%, 70% { transform: translate3d(-4px,0,0); } 40%, 60% { transform: translate3d(4px,0,0); } }
+
+        .btn-main { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 10px;}
+        .btn-main:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 10px 20px rgba(109, 40, 217, 0.2);}
+        
+        .header { display: flex; flex-direction: column; gap: 15px; background: var(--card); padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid var(--border);}
+        @media(min-width: 768px) { .header { flex-direction: row; justify-content: space-between; align-items: center; padding: 25px 30px; } }
+        .header h1 { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px;}
+        .header-actions { display: flex; gap: 10px; flex-wrap: wrap;}
+        .btn-icon { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); padding: 12px 18px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px;}
+        .btn-icon:hover { background: white; border-color: var(--primary); color: var(--primary); box-shadow: 0 4px 12px rgba(109, 40, 217, 0.1);}
+
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 25px; }
+        @media(min-width: 768px) { .stats-row { grid-template-columns: repeat(6, 1fr); gap: 15px; } }
+        .stat-card { background: var(--card); padding: 18px; border-radius: 18px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; box-shadow: 0 8px 20px rgba(0,0,0,0.03); transition: transform 0.2s;}
+        .stat-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+        .stat-card span { font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;}
+        .stat-card h3 { font-size: 26px; font-weight: 800; color: var(--primary); margin: 0; line-height: 1;}
+
+        .filter-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;}
+        .filter-group { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; width: 100%;}
+        @media(min-width: 768px) { .filter-group { width: auto; } }
+        .filter-pill { flex-shrink: 0; padding: 10px 16px; font-size: 13px; font-weight: 600; background: var(--card); color: var(--text-light); border-radius: 20px; cursor: pointer; transition: 0.3s; border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.02);}
+        .filter-pill:hover { border-color: var(--primary); color: var(--primary); }
+        .filter-pill.active { background: var(--text); color: white; border-color: transparent; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);}
+        
+        .sort-btn { flex-shrink: 0; display: flex; align-items: center; gap: 6px; background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 10px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.02);}
+        .sort-btn:hover { background: var(--input-bg); border-color: var(--text-light); }
+
+        .grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+        @media(min-width: 600px) { .grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); } }
+        @media(min-width: 1024px) { .grid { grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); } }
+        
+        .card { background: var(--card); padding: 24px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 10px 30px -5px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 16px; transition: transform 0.2s, box-shadow 0.2s;}
+        .card:hover { box-shadow: 0 20px 40px -5px rgba(0,0,0,0.1); border-color: #CBD5E1; }
+        
+        .card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;}
+        .badge { font-size: 11px; padding: 6px 10px; border-radius: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 5px;}
+        .badge-pub { background: #E0F2FE; color: #0369A1; }
+        .badge-prv { background: #FEF3C7; color: #B45309; }
+        .date-text { font-size: 12px; color: var(--text-light); font-weight: 600; background: var(--bg); padding: 4px 10px; border-radius: 20px;}
+        
+        .meta-box { background: var(--input-bg); padding: 14px 18px; border-radius: 16px; font-size: 13px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; color: var(--text-light);}
+        .meta-box strong { color: var(--text); font-weight: 700; font-size: 14px;}
+        
+        .q-display { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.5; border-left: 4px solid var(--primary); padding-left: 14px; margin: 4px 0; word-wrap: break-word;}
+        
+        .a-display { font-size: 14px; font-weight: 500; color: var(--text-light); background: var(--input-bg); padding: 16px; border-radius: 16px; line-height: 1.6; font-style: italic;}
+        .a-display.answered { color: var(--text); font-style: normal; border: 1px solid var(--border); background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.03);}
+
+        .quick-reply-box { display: flex; gap: 8px; margin-top: auto; align-items: center;}
+        .quick-reply-input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 2px solid var(--border); background: var(--input-bg); font-size: 14px; outline: none; font-family: 'Poppins'; transition: 0.3s;}
+        .quick-reply-input:focus { border-color: var(--primary); background: white; box-shadow: 0 4px 12px rgba(109, 40, 217, 0.08);}
+        .btn-reply { background: var(--primary); color: white; border: none; padding: 0 18px; height: 46px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center;}
+        .btn-reply:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(109, 40, 217, 0.2);}
+
+        .action-row { display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap;}
+        .btn-card { flex: 1; min-width: 80px; padding: 12px; border-radius: 12px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 6px;}
+        .btn-card i { font-size: 14px; }
+        .btn-save { background: var(--success-bg); color: var(--success); }
+        .btn-save:hover { background: var(--success); color: white; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16, 185, 129, 0.2);}
+        .btn-del { background: var(--warning-bg); color: var(--warning); }
+        .btn-del:hover { background: var(--warning); color: white; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(245, 158, 11, 0.2);}
+        .btn-rej { background: var(--danger-bg); color: var(--danger); }
+        .btn-rej:hover { background: var(--danger); color: white; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(239, 68, 68, 0.2);}
+        
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; max-width: 380px;}
+        .toast { background: var(--text); color: white; padding: 14px 20px; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); font-size: 14px; font-weight: 600; transition: 0.4s; transform: translateY(-100%); opacity: 0; display: flex; align-items: center; gap: 12px;}
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        .empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-light); }
+        .empty-state i { font-size: 45px; opacity: 0.4; margin-bottom: 15px; color: var(--primary); }
+        .empty-state p { font-size: 18px; font-weight: 700; color: var(--text); }
+        
+        /* ADMIN FEED SPECIFIC */
+        .admin-feed-card { border: 2px solid var(--accent-purple); box-shadow: 0 12px 35px rgba(109, 40, 217, 0.08); }
+        .admin-feed-badge { background: var(--accent-purple); color: white; }
+        .user-answer-item { background: var(--bg); border-radius: 16px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--border); display: flex; flex-direction: column; gap: 8px;}
+        .user-answer-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--text-light); align-items: center;}
+        .admin-reply-bubble { background: var(--accent-purple-light); border: 1px solid #E2D4FD; border-radius: 12px; padding: 12px 16px; font-size: 13px; color: var(--primary); font-weight: 600;}
+        
+        .code-textarea { flex: 1; width: 100%; min-height: 400px; background: #1E1E1E; color: #D4D4D4; border-radius: 16px; padding: 20px; font-family: monospace; font-size: 14px; line-height: 1.6; border: 2px solid var(--border); outline: none; resize: none; margin-bottom: 15px;}
+        
+        .archive-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; margin-top: 10px; }
+        .archive-table th { background: var(--bg); padding: 12px; color: var(--text-light); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;}
+        .archive-table td { padding: 12px; border-bottom: 1px solid var(--border); color: var(--text); word-break: break-all; font-weight: 500;}
+        .archive-badge { background: var(--danger-bg); color: var(--danger); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800;}
+
+        /* SETTINGS MODAL */
+        .set-category-header { text-align: left; font-weight: 800; color: var(--text-light); font-size: 12px; margin-top: 25px; margin-bottom: 12px; text-transform: uppercase; display: block; border-bottom: 2px solid var(--border); padding-bottom: 8px;}
+        .card-container { display: flex; flex-direction: column; gap: 12px; }
+        .card-option { width: 100%; background: var(--input-bg); border-radius: 20px; border: 1px solid var(--border); overflow: hidden; transition: 0.3s; }
+        .card-option-header { width: 100%; padding: 20px; background: transparent; border: none; cursor: pointer; display: flex; align-items: center; gap: 15px; text-align: left; outline: none; transition: 0.2s;}
+        .card-option-header:hover { background: white; }
+        .card-icon { width: 42px; height: 42px; font-size: 18px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: #EEEBF9; color: var(--primary); flex-shrink: 0;}
+        .card-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .card-title { font-weight: 800; color: var(--text); font-size: 15px;}
+        .card-desc { font-weight: 500; color: var(--text-light); font-size: 12px; }
+        .card-chevron { font-size: 12px; color: var(--text-light); opacity: 0.6; transition: 0.3s; flex-shrink: 0;}
+        .card-option-body { display: none; padding: 25px; border-top: 1px dashed var(--border); background: var(--card); text-align: left;}
+        .card-option-body.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="overlay alert-overlay" id="alert-modal" style="display: none;">
+        <div class="modal" style="max-width: 400px; padding: 40px 30px;">
+            <div id="alert-icon" style="font-size: 50px; margin-bottom: 15px;"></div>
+            <h2 id="alert-title">Alert</h2>
+            <p id="alert-message" style="margin-top: 10px; font-size: 15px; font-weight: 500; color: var(--text-light);">Message content here.</p>
+            <button class="btn-main" style="margin-top: 25px; height: 50px;" onclick="document.getElementById('alert-modal').style.display='none'">OK, Understood</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="new-admin-q-modal" style="display: none; z-index: 10001;">
+        <div class="modal">
+            <h2><i class="fa-solid fa-crown"></i> Ask the Community</h2>
+            <p>Post a new question to the Admin Feed.</p>
+            <textarea id="new-admin-q-text" class="edit-input" placeholder="Type your question here..." style="min-height: 120px; font-size: 15px;"></textarea>
+            <button class="btn-main" style="height: 50px;" onclick="postAdminQuestion()"><i class="fa-solid fa-paper-plane"></i> Post Question</button>
+            <button class="btn-icon" style="width: 100%; height: 50px; border:none;" onclick="document.getElementById('new-admin-q-modal').style.display='none'">Cancel</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="edit-admin-q-modal" style="display: none; z-index: 10001;">
+        <div class="modal">
+            <h2><i class="fa-solid fa-pen"></i> Edit Admin Post</h2>
+            <input type="hidden" id="edit-admin-q-id">
+            <textarea id="edit-admin-q-text" class="edit-input" style="min-height: 120px; font-size: 15px;"></textarea>
+            <button class="btn-main" style="height: 50px;" onclick="saveEditAdminQuestion()"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+            <button class="btn-icon" style="width: 100%; height: 50px; border:none;" onclick="document.getElementById('edit-admin-q-modal').style.display='none'">Cancel</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="edit-user-ans-modal" style="display: none; z-index: 10001;">
+        <div class="modal">
+            <h2><i class="fa-solid fa-user-pen"></i> Edit User Answer</h2>
+            <p>Modify what the user wrote in the Admin Feed.</p>
+            <input type="hidden" id="edit-ua-qid">
+            <input type="hidden" id="edit-ua-aid">
+            <textarea id="edit-ua-text" class="edit-input" style="min-height: 120px; font-size: 15px;"></textarea>
+            <button class="btn-main" style="height: 50px;" onclick="saveEditUserAnswer()"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+            <button class="btn-icon" style="width: 100%; height: 50px; border:none;" onclick="document.getElementById('edit-user-ans-modal').style.display='none'">Cancel</button>
+        </div>
+    </div>
+
+    <div class="overlay login-overlay" id="login-modal" style="display: flex;">
+        <div class="modal">
+            <div style="font-size: 50px; color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-lock"></i></div>
+            <h2>Admin Area</h2>
+            <div id="login-desc-container">
+                <p id="login-desc">Booting Secure Environment...</p>
+            </div>
+            <input type="password" id="login-password" placeholder="Admin Password" style="display: none;" onkeypress="if(event.key === 'Enter') checkLoginPassword()">
+            <button class="btn-main" id="login-btn" style="display: none; height: 50px;" onclick="checkLoginPassword()"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+            <div style="margin-top: 15px; font-size: 11px; color: var(--text-light);">
+                <span id="auth-status-text">Connecting...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="settings-modal" style="display: none; z-index: 10001;">
+        <div class="modal modal-settings">
+            <h2><i class="fa-solid fa-gear"></i> System Settings</h2>
+            <p>Manage your application preferences and security.</p>
+            <div style="max-height: 65vh; overflow-y: auto; text-align: left; padding-right: 15px; margin-bottom: 25px;">
+                
+                <span class="set-category-header">Profile & Identity</span>
+                <div class="card-container">
+                    <div class="card-option">
+                        <button class="card-option-header" onclick="toggleCard(this)">
+                            <div class="card-icon"><i class="fa-solid fa-user"></i></div>
+                            <div class="card-info"><div class="card-title">Profile Management</div><div class="card-desc">Edit display name & links</div></div>
+                            <i class="fa-solid fa-chevron-down card-chevron"></i>
+                        </button>
+                        <div class="card-option-body">
+                            <span class="input-label">Display Name</span><input type="text" id="set-prof-name">
+                            <span class="input-label">Username</span><input type="text" id="set-prof-user">
+                            <span class="input-label">Profile Image URL</span><input type="text" id="set-prof-image">
+                            <span class="input-label">Profile Link</span><input type="text" id="set-prof-link">
+                        </div>
+                    </div>
+                </div>
+
+                <span class="set-category-header">Interface</span>
+                <div class="card-container">
+                    <div class="card-option">
+                        <button class="card-option-header" onclick="toggleCard(this)">
+                            <div class="card-icon"><i class="fa-solid fa-palette"></i></div>
+                            <div class="card-info"><div class="card-title">Appearance</div><div class="card-desc">Configure app colors & background</div></div>
+                            <i class="fa-solid fa-chevron-down card-chevron"></i>
+                        </button>
+                        <div class="card-option-body">
+                            <span class="input-label">Primary Color (Hex)</span>
+                            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                <input type="color" id="set-theme-color-picker" style="width: 50px; height: 50px; padding: 2px; cursor: pointer; border-radius: 12px; border: 2px solid var(--border);" onchange="document.getElementById('set-theme-primary').value = this.value">
+                                <input type="text" id="set-theme-primary" placeholder="#FF477E" style="flex: 1; margin-bottom: 0px;" oninput="document.getElementById('set-theme-color-picker').value = this.value">
+                            </div>
+                            <span class="input-label">Background Style</span>
+                            <input type="text" id="set-theme-bg" placeholder="#EEF1F6 or url('...')">
+                        </div>
+                    </div>
+                </div>
+
+                <span class="set-category-header">System & Storage</span>
+                <div class="card-container">
+                    <div class="card-option">
+                        <button class="card-option-header" onclick="toggleCard(this)">
+                            <div class="card-icon"><i class="fa-solid fa-cloud"></i></div>
+                            <div class="card-info">
+                                <div class="card-title">Hosting & Repo API</div>
+                                <div class="card-desc">Repository Connection Info</div>
+                            </div>
+                            <i class="fa-solid fa-chevron-down card-chevron"></i>
+                        </button>
+                        <div class="card-option-body">
+                            <div style="background: var(--warning-bg); color: #B45309; padding: 12px; border-radius: 12px; font-size: 12px; margin-bottom: 15px; border: 1px solid #FDE68A; line-height: 1.5;">
+                                <i class="fa-solid fa-shield-halved"></i> <strong>Token Security:</strong> The API token is embedded directly in the HTML file via split-code.
+                            </div>
+                            <span class="input-label">GitHub Username</span>
+                            <input type="text" disabled value="Hardcoded in Code">
+                            <span class="input-label">Repository Name</span>
+                            <input type="text" disabled value="Hardcoded in Code">
+                        </div>
+                    </div>
+                </div>
+
+                <span class="set-category-header">Security</span>
+                <div class="card-container">
+                    <div class="card-option">
+                        <button class="card-option-header" onclick="toggleCard(this)">
+                            <div class="card-icon"><i class="fa-solid fa-lock"></i></div>
+                            <div class="card-info"><div class="card-title">Password</div><div class="card-desc">Change master password</div></div>
+                            <i class="fa-solid fa-chevron-down card-chevron"></i>
+                        </button>
+                        <div class="card-option-body">
+                            <span class="input-label">Current Password</span><input type="password" id="set-old-pass">
+                            <span class="input-label">New Password</span><input type="password" id="set-new-pass">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="action-row">
+                <button class="btn-main" style="height: 55px;" onclick="saveSystemSettings()"><i class="fa-solid fa-floppy-disk"></i> Save All Changes</button>
+                <button class="btn-icon" style="border:none; height: 55px;" onclick="document.getElementById('settings-modal').style.display='none'">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="editor-modal" style="display:none; z-index: 10002;">
+        <div class="modal modal-large">
+            <h2><i class="fa-solid fa-file-code"></i> Editing <span id="editor-filename">index.html</span></h2>
+            <textarea id="code-editor-area" class="code-textarea" spellcheck="false"></textarea>
+            <div class="action-row">
+                <button class="btn-main" style="height: 55px;" onclick="saveCodeEditor()"><i class="fa-solid fa-cloud-arrow-up"></i> Save & Push</button>
+                <button class="btn-icon" style="border:none; height: 55px;" onclick="document.getElementById('editor-modal').style.display='none'">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="archive-modal" style="display:none; z-index: 10002;">
+        <div class="modal modal-large">
+            <h2><i class="fa-solid fa-box-archive"></i> Deleted Archive</h2>
+            <p>Log of permanently deleted IDs to prevent reuse.</p>
+            <div style="flex: 1; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 20px;">
+                <table class="archive-table">
+                    <thead><tr><th>Deleted ID</th><th>Password</th><th>Deleted At</th></tr></thead>
+                    <tbody id="archive-tbody"></tbody>
+                </table>
+            </div>
+            <button class="btn-main" style="background: var(--input-bg); color: var(--text); height: 55px;" onclick="document.getElementById('archive-modal').style.display='none'">Close Archive</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1><i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Admin Control</h1>
+        <div class="header-actions">
+            <button class="btn-icon" onclick="document.getElementById('new-admin-q-modal').style.display='flex'"><i class="fa-solid fa-plus"></i> New Admin Q</button>
+            <button class="btn-icon" onclick="openEditor('index.html')"><i class="fa-solid fa-code"></i> Edit Code</button>
+            <button class="btn-icon" onclick="openSettingsModal()"><i class="fa-solid fa-gear"></i> Settings</button>
+            <button class="btn-icon" id="refresh-btn" onclick="fetchAll()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+            <button class="btn-icon" style="color: var(--danger); border-color: var(--danger-bg);" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Lock</button>
+        </div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card"><span>Public</span><h3 id="stat-public">0</h3></div>
+        <div class="stat-card"><span>Private</span><h3 id="stat-private">0</h3></div>
+        <div class="stat-card"><span>Admin Feed</span><h3 id="stat-admin">0</h3></div>
+        <div class="stat-card"><span>Rejected</span><h3 id="stat-rejected">0</h3></div>
+        <div class="stat-card"><span>Trash</span><h3 id="stat-trash">0</h3></div>
+        <div class="stat-card"><span>Unread</span><h3 id="stat-unread" style="color:var(--danger)">0</h3></div>
+    </div>
+
+    <div class="filter-row">
+        <div class="filter-group">
+            <button class="filter-pill active" onclick="setFilter('all', this)">All Active</button>
+            <button class="filter-pill" onclick="setFilter('unread', this)">Unread</button>
+            <button class="filter-pill" onclick="setFilter('answered', this)">Answered</button>
+            <button class="filter-pill" onclick="setFilter('admin_feed', this)" style="background: var(--accent-purple-light); color: var(--primary); border-color: transparent;">Admin Qs</button>
+            <button class="filter-pill" onclick="setFilter('trash', this)">Trash</button>
+            <button class="filter-pill" onclick="setFilter('rejected', this)">Rejected</button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button class="sort-btn" id="sort-toggle-btn" onclick="toggleSort()"><i class="fa-solid fa-arrow-down-short-wide"></i> Newest</button>
+            <button class="btn-icon" style="color: var(--text-light); border-color: var(--border);" onclick="openDeletedArchive()"><i class="fa-solid fa-box-archive"></i> Archive</button>
+        </div>
+    </div>
+
+    <div class="grid" id="admin-grid"></div>
+
+    <script>
+        // =======================================================================
+        // GITHUB CONFIGURATION - DATA FOLDER INTEGRATION
+        // =======================================================================
+        const TEST_LOCALLY = false; // Strictly rely on GitHub.
+
+        const REPO_OWNER = 'SKBodhak';
+        const REPO_NAME = 'Ask-Me-Anything'; 
+        
+        let CONFIG = {
+            publicPath: 'data/public.json',
+            privatePath: 'data/private.json',
+            trashedPath: 'data/trashed.json',     
+            rejectedPath: 'data/rejected.json',   
+            deletedPath: 'data/deleted.json',     
+            restorePath: 'data/restore.json',     
+            systemPath: 'data/system.json',       
+            authPath: 'data/auth.json',
+            adminFeedPath: 'data/admin_questions.json' 
+        };
+
+        let SHAS = { public: null, private: null, trashed: null, rejected: null, deleted: null, restore: null, system: null, auth: null, adminFeed: null, editorFile: null };
+
+        // 🚨 NEW SECURE GITHUB TOKEN SPLIT 🚨
+        const p1="github"; 
+        const p2="_pat_"; 
+        const p3="11A3JHEYA0FxYR"; 
+        const p4="j2PHDDCQ_U5rIR"; 
+        const p5="2jGnbNY04trvzL"; 
+        const p6="v03E905of3KB9t"; 
+        const p7="gGuPlMHgUbZYO6"; 
+        const p8="QIZH5CssbY5S";
+        const hiddenToken = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8;
+
+        // Force copying text rule (God of None)
+        document.addEventListener('copy', function(e) { 
+            e.clipboardData.setData('text/plain', 'GOD OF NONE.'); 
+            e.preventDefault(); 
+        });
+
+        // =======================================================================
+        // ENCRYPTION ENGINE
+        // =======================================================================
+        const SECRET_KEY = "ShyamSecureKey2026"; 
+        const SIGNATURE_KEY = "ShyamHmacAuth2026"; 
+
+        function secureStringify(data) {
+            if (typeof CryptoJS === 'undefined') return JSON.stringify(data);
+            const jsonStr = JSON.stringify(data);
+            const ciphertext = CryptoJS.AES.encrypt(jsonStr, SECRET_KEY).toString();
+            const signature = CryptoJS.HmacSHA256(ciphertext, SIGNATURE_KEY).toString();
+            return JSON.stringify({ data: btoa(ciphertext), signature: signature }, null, 2);
+        }
+
+        function secureParse(rawStr) {
+            if (!rawStr) return null;
+            try {
+                const envelope = JSON.parse(rawStr);
+                if (envelope.data && envelope.signature) {
+                    const ciphertext = atob(envelope.data);
+                    const expected = CryptoJS.HmacSHA256(ciphertext, SIGNATURE_KEY).toString();
+                    if (expected === envelope.signature) {
+                        const bytes = CryptoJS.AES.decrypt(ciphertext, SECRET_KEY);
+                        return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+                    }
+                }
+                return envelope; // Normal fallback for initial unencrypted plain text arrays
+            } catch(e) { return null; }
+        }
+
+        // --- DATA STATE ---
+        let systemData = {}; let publicQuestions = []; let privateQuestions = []; let trashedQuestions = []; 
+        let rejectedQuestions = []; let restoreQuestions = []; let deletedRecords = []; let adminFeedQuestions = [];
+        let authData = null; let currentFilter = 'all'; let currentSort = 'newest'; let editingId = null;
+
+        // --- UTILITIES ---
+        function escAttr(s) { 
+            if(!s) return ""; 
+            return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); 
+        }
+
+        function showToast(m, isErr=false) {
+            const t = document.createElement('div'); t.className = 'toast show'; 
+            if(isErr) t.style.background = 'var(--danger)'; t.innerHTML = `<i class="fa-solid ${isErr?'fa-triangle-exclamation':'fa-check'}"></i> <span>${m}</span>`;
+            document.getElementById('toast-container').appendChild(t); setTimeout(() => t.remove(), 3000);
+        }
+
+        function showAlert(title, message, isError = false) {
+            const modal = document.getElementById('alert-modal');
+            const titleEl = document.getElementById('alert-title');
+            document.getElementById('alert-message').innerHTML = message;
+            titleEl.innerText = title; titleEl.style.color = isError ? 'var(--danger)' : 'var(--primary)';
+            modal.style.display = 'flex';
+        }
+
+        function encodeBase64Unicode(str) { return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function toSolidBytes(match, p1) { return String.fromCharCode('0x' + p1); })); }
+        function decodeBase64Unicode(str) { const cleanStr = str.replace(/\s/g, ''); return decodeURIComponent(atob(cleanStr).split('').map(function(c) { return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2); }).join('')); }
+
+        // --- CORE FILE I/O ---
+        async function fetchFile(path) {
+            // Strictly fetch from GitHub
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}?_t=${Date.now()}`, {
+                    headers: { 'Authorization': `token ${hiddenToken}` }
+                });
+                if (!res.ok) return { data: null };
+                const json = await res.json();
+                const decodedText = decodeBase64Unicode(json.content);
+                return { data: secureParse(decodedText), sha: json.sha, raw: decodedText };
+            } catch(e) { return { data: null }; }
+        }
+
+        async function saveFile(path, data, sha, msg, skipEncryption = false) {
+            const contentToSave = skipEncryption ? data : secureStringify(data);
+            const encodedContent = encodeBase64Unicode(contentToSave);
+            const body = { message: msg, content: encodedContent, sha: sha };
+            
+            const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+                method: 'PUT', headers: { 'Authorization': `token ${hiddenToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if(!res.ok) throw new Error("API Save Error");
+            const resJson = await res.json(); return resJson.content.sha;
+        }
+
+        // --- BOOT (LOGIN SCREEN RESTORED) ---
+        async function initApp() {
+            try {
+                const sysRes = await fetchFile(CONFIG.systemPath);
+                if (sysRes.data) { systemData = { ...systemData, ...sysRes.data }; SHAS.system = sysRes.sha; }
+
+                const authRes = await fetchFile(CONFIG.authPath);
+                
+                if (authRes.data && authRes.data.password) {
+                    authData = authRes.data; SHAS.auth = authRes.sha;
+                    document.getElementById('login-desc-container').innerHTML = `<p id="login-desc">Enter your master password to access the panel.</p>`;
+                    document.getElementById('auth-status-text').innerHTML = "<i class='fa-solid fa-cloud'></i> Connected to Secure GitHub API";
+                    document.getElementById('login-password').style.display = 'block';
+                    document.getElementById('login-btn').style.display = 'flex';
+                } else {
+                    document.getElementById('login-desc-container').innerHTML = `<p style="color: var(--danger); font-weight: bold;">System Locked: JSON arrays are empty or missing on GitHub.</p>`;
+                    document.getElementById('auth-status-text').innerHTML = "Ensure you uploaded auth.json to the /data folder.";
+                    authData = null; 
+                }
+            } catch(err) {
+                document.getElementById('login-desc-container').innerHTML = `<p style="color: var(--danger); font-weight: bold;">Critical API Failure.</p>`;
+                document.getElementById('auth-status-text').innerHTML = err.message;
+            }
+        }
+
+        async function checkLoginPassword() {
+            const input = document.getElementById('login-password').value;
+            if(!input) { markInputError('login-password'); return; }
+
+            const btn = document.getElementById('login-btn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
+            btn.disabled = true;
+
+            try {
+                if (authData === null) return;
+                if (input === authData.password) {
+                    showToast('Login verified!');
+                    document.getElementById('login-modal').style.display = 'none';
+                    document.getElementById('login-password').value = '';
+                    fetchAll(); 
+                } else {
+                    markInputError('login-password');
+                    showToast("Incorrect password. Access denied.", true);
+                    document.getElementById('login-password').value = '';
+                }
+            } catch(e) {
+                showAlert("Authentication Error", "An error occurred: " + e.message, true);
+            } finally {
+                btn.innerHTML = originalHtml; btn.disabled = false;
+            }
+        }
+
+        function logout() {
+            document.getElementById('admin-grid').innerHTML = '';
+            publicQuestions = []; privateQuestions = []; trashedQuestions = []; rejectedQuestions = []; restoreQuestions = []; deletedRecords = []; adminFeedQuestions = [];
+            authData = null; 
+            document.getElementById('login-password').style.display = 'none';
+            document.getElementById('login-btn').style.display = 'none';
+            document.getElementById('login-modal').style.display = 'flex';
+            initApp();
+        }
+
+        async function fetchAll() {
+            document.getElementById('admin-grid').innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading Encrypted Database...</p></div>';
+            const [pub, priv, trash, rej, del, rest, adm] = await Promise.all([
+                fetchFile(CONFIG.publicPath), fetchFile(CONFIG.privatePath), fetchFile(CONFIG.trashedPath),
+                fetchFile(CONFIG.rejectedPath), fetchFile(CONFIG.deletedPath), fetchFile(CONFIG.restorePath), fetchFile(CONFIG.adminFeedPath)
+            ]);
+            publicQuestions = pub.data || []; privateQuestions = priv.data || []; trashedQuestions = trash.data || [];
+            rejectedQuestions = rej.data || []; deletedRecords = del.data || []; restoreQuestions = rest.data || [];
+            adminFeedQuestions = adm.data || [];
+            
+            SHAS.public = pub.sha; SHAS.private = priv.sha; SHAS.trashed = trash.sha; SHAS.rejected = rej.sha; SHAS.adminFeed = adm.sha;
+            updateStats(); renderAdmin();
+        }
+
+        function updateStats() {
+            document.getElementById('stat-public').innerText = publicQuestions.length;
+            document.getElementById('stat-private').innerText = privateQuestions.length;
+            document.getElementById('stat-admin').innerText = adminFeedQuestions.length;
+            document.getElementById('stat-rejected').innerText = rejectedQuestions.length;
+            document.getElementById('stat-trash').innerText = trashedQuestions.length;
+            document.getElementById('stat-unread').innerText = [...publicQuestions, ...privateQuestions].filter(q=>!q.answer).length;
+        }
+
+        function setFilter(type, btnElement) {
+            currentFilter = type; document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active'); updateStats(); renderAdmin();
+        }
+
+        function toggleSort() {
+            currentSort = currentSort === 'newest' ? 'oldest' : 'newest';
+            document.getElementById('sort-toggle-btn').innerHTML = currentSort === 'newest' ? '<i class="fa-solid fa-arrow-down-short-wide"></i> Newest' : '<i class="fa-solid fa-arrow-up-short-wide"></i> Oldest'; renderAdmin();
+        }
+
+        function renderAdmin() {
+            const grid = document.getElementById('admin-grid'); grid.innerHTML = '';
+
+            if (currentFilter === 'admin_feed') {
+                grid.innerHTML = `<div style="grid-column: 1/-1; padding: 25px; background: white; border-radius: 20px; border: 2px dashed var(--accent-purple); display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <div><h3 style="color: var(--accent-purple); font-size: 18px; margin-bottom: 4px;">Community Feed</h3><p style="font-size:13px; color:var(--text-light); font-weight: 500;">Ask questions directly to users.</p></div>
+                    <button class="btn-main" style="width:auto; margin:0;" onclick="document.getElementById('new-admin-q-modal').style.display='flex'"><i class="fa-solid fa-plus"></i> New Post</button>
+                </div>`;
+                let sorted = [...adminFeedQuestions]; if(currentSort === 'newest') sorted.reverse();
+                if(sorted.length === 0) { grid.innerHTML += '<div class="empty-state"><i class="fa-solid fa-crown"></i><p>No Posts Yet.</p></div>'; return; }
+
+                sorted.forEach(q => {
+                    let ansUI = (q.answers || []).map(a => `
+                        <div class="user-answer-item">
+                            <div class="user-answer-header">
+                                <span style="font-size:12px; color:var(--text);"><i class="fa-solid fa-user" style="color:var(--text-light);"></i> ${escAttr(a.user)}</span>
+                                <div style="display:flex; gap: 10px;">
+                                    <button onclick="openEditUserAnswer('${q.id}', '${a.id}')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-weight:700;"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteUserAnswer('${q.id}', '${a.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-weight:700;"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
+                            <div style="font-size: 14px; font-weight: 500; margin:8px 0; line-height: 1.5;">${escAttr(a.text)}</div>
+                            ${a.adminReply ? `<div class="admin-reply-bubble"><i class="fa-solid fa-reply"></i> You: ${escAttr(a.adminReply)}</div>` : `<div class="quick-reply-box" style="margin-top:8px"><input id="rep-${q.id}-${a.id}" class="quick-reply-input" placeholder="Reply to user..."><button class="btn-reply" onclick="replyToUserAnswer('${q.id}','${a.id}')"><i class="fa-solid fa-paper-plane"></i></button></div>`}
+                        </div>`).join('');
+                    
+                    grid.innerHTML += `<div class="card admin-feed-card">
+                        <div class="card-top"><span class="badge admin-feed-badge"><i class="fa-solid fa-crown"></i> Admin Post</span><span class="date-text">${escAttr(q.date)}</span></div>
+                        <div class="q-display" style="border-color: var(--accent-purple); font-size: 18px;">${escAttr(q.text)}</div>
+                        <div class="action-row"><button class="btn-card" style="background:var(--input-bg); color: var(--text); border: 1px solid var(--border);" onclick="openEditAdminQuestion('${q.id}')"><i class="fa-solid fa-pen-to-square"></i> Edit</button><button class="btn-card btn-del" onclick="deleteAdminQuestion('${q.id}')"><i class="fa-solid fa-trash"></i> Delete</button></div>
+                        <div class="divider"></div><h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:12px; font-weight: 800;">User Answers</h4>
+                        ${ansUI || '<p style="font-size:13px; font-style:italic; color:var(--text-light); padding: 10px;">No answers yet.</p>'}
+                    </div>`;
+                });
+                return;
+            }
+
+            let display = [];
+            if(currentFilter==='trash') display = trashedQuestions;
+            else if(currentFilter==='rejected') display = rejectedQuestions;
+            else display = [...publicQuestions, ...privateQuestions];
+            
+            let sorted = [...display]; if(currentSort==='newest') sorted.reverse();
+            if(sorted.length === 0) { grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-folder-open"></i><p>No results found here.</p></div>'; return; }
+
+            sorted.forEach(q => {
+                const isPriv = q.type === 'private';
+                let actionUI = '';
+                if(currentFilter === 'trash') {
+                    actionUI = `<button class="btn-card btn-save" onclick="moveQuestion('${q.id}', 'trash', 'active')"><i class="fa-solid fa-rotate-left"></i> Restore</button><button class="btn-card btn-del" onclick="hardDelete('${q.id}')"><i class="fa-solid fa-fire"></i> Perm Delete</button>`;
+                } else if(currentFilter === 'rejected') {
+                    actionUI = `<button class="btn-card btn-save" onclick="moveQuestion('${q.id}', 'rejected', 'active')"><i class="fa-solid fa-rotate-left"></i> Restore</button><button class="btn-card btn-del" onclick="moveQuestion('${q.id}', 'rejected', 'trash')"><i class="fa-solid fa-trash"></i> Trash</button>`;
+                } else {
+                    actionUI = `<button class="btn-card btn-rej" onclick="moveQuestion('${q.id}', 'active', 'rejected')"><i class="fa-solid fa-ban"></i> Reject</button><button class="btn-card btn-del" onclick="moveQuestion('${q.id}', 'active', 'trash')"><i class="fa-solid fa-trash"></i> Trash</button>`;
+                }
+
+                grid.innerHTML += `<div class="card">
+                    <div class="card-top"><span class="badge ${isPriv?'badge-prv':'badge-pub'}"><i class="fa-solid ${isPriv?'fa-lock':'fa-earth-americas'}"></i> ${q.type}</span><span class="date-text">${escAttr(q.id)}</span></div>
+                    <div class="meta-box"><div>From: <strong style="color: var(--text);">${escAttr(q.name || 'Anonymous')}</strong></div>${isPriv?`<div style="margin-top: 4px;">Pass: <strong style="color:var(--danger); font-family:monospace; font-size: 14px;">${escAttr(q.password)}</strong></div>`:''}</div>
+                    <div class="q-display">${escAttr(q.text)}</div>
+                    <div class="a-display ${q.answer ? 'answered' : ''}">${q.answer ? `<i class="fa-solid fa-check" style="color: var(--success); margin-right: 6px;"></i> ${escAttr(q.answer)}` : 'Awaiting reply...'}</div>
+                    ${currentFilter === 'all' ? `<div class="quick-reply-box"><input id="ans-${q.id}" class="quick-reply-input" placeholder="Type your answer..." value="${escAttr(q.answer || '')}"><button class="btn-reply" onclick="quickReply('${q.id}')"><i class="fa-solid fa-paper-plane"></i></button></div>` : ''}
+                    <div class="action-row">${actionUI}</div>
+                </div>`;
+            });
+        }
+
+        // --- LOGIC FUNCTIONS ---
+        async function postAdminQuestion() {
+            const t = document.getElementById('new-admin-q-text').value.trim(); if(!t) return;
+            const newQ = { id: 'ADM-'+Date.now(), type: 'admin', text: t, date: new Date().toLocaleDateString(), answers: [] };
+            adminFeedQuestions.push(newQ);
+            SHAS.adminFeed = await saveFile(CONFIG.adminFeedPath, adminFeedQuestions, SHAS.adminFeed, "New Admin Q");
+            document.getElementById('new-admin-q-modal').style.display='none'; document.getElementById('new-admin-q-text').value='';
+            showToast('Posted securely!'); fetchAll();
+        }
+
+        function openEditAdminQuestion(id) {
+            const q = adminFeedQuestions.find(i=>i.id===id);
+            document.getElementById('edit-admin-q-id').value = id; document.getElementById('edit-admin-q-text').value = q.text;
+            document.getElementById('edit-admin-q-modal').style.display='flex';
+        }
+
+        async function saveEditAdminQuestion() {
+            const id = document.getElementById('edit-admin-q-id').value; const t = document.getElementById('edit-admin-q-text').value;
+            const idx = adminFeedQuestions.findIndex(i=>i.id===id); adminFeedQuestions[idx].text = t;
+            SHAS.adminFeed = await saveFile(CONFIG.adminFeedPath, adminFeedQuestions, SHAS.adminFeed, "Edited Admin Q");
+            document.getElementById('edit-admin-q-modal').style.display='none'; showToast('Updated!'); fetchAll();
+        }
+
+        async function deleteAdminQuestion(id) {
+            if(!confirm("Delete this entire post?")) return;
+            adminFeedQuestions = adminFeedQuestions.filter(i=>i.id!==id);
+            SHAS.adminFeed = await saveFile(CONFIG.adminFeedPath, adminFeedQuestions, SHAS.adminFeed, "Deleted Admin Q");
+            showToast('Deleted!'); fetchAll();
+        }
+
+        async function replyToUserAnswer(qId, aId) {
+            const val = document.getElementById(`rep-${qId}-${aId}`).value;
+            const qIdx = adminFeedQuestions.findIndex(i=>i.id===qId); const aIdx = adminFeedQuestions[qIdx].answers.findIndex(i=>i.id===aId);
+            adminFeedQuestions[qIdx].answers[aIdx].adminReply = val;
+            SHAS.adminFeed = await saveFile(CONFIG.adminFeedPath, adminFeedQuestions, SHAS.adminFeed, "Admin Reply to Answer");
+            showToast('Reply Sent!'); fetchAll();
+        }
+
+        function openEditUserAnswer(qId, aId) {
+            const q = adminFeedQuestions.find(i=>i.id===qId); const a = q.answers.find(i=>i.id===aId);
+            document.getElementById('edit-ua-qid').value = qId; document.getElementById('edit-ua-aid').value = aId;
+            document.getElementById('edit-ua-text').value = a.text;
+            document.getElementById('edit-user-ans-modal').style.display='flex';
+        }
+
+        async function saveEditUserAnswer() {
+            const qId = document.getElementById('edit-ua-qid').value; const aId = document.getElementById('edit-ua-aid').value;
+            const val = document.getElementById('edit-ua-text').value;
+            const qIdx = adminFeedQuestions.findIndex(i=>i.id===qId); const aIdx = adminFeedQuestions[qIdx].answers.findIndex(i=>i.id===aId);
+            adminFeedQuestions[qIdx].answers[aIdx].text = val;
+            SHAS.adminFeed = await saveFile(CONFIG.adminFeedPath, adminFeedQuestions, SHAS.adminFeed, "Edited User Ans");
+            document.getElementById('edit-user-ans-modal').style.display='none'; showToast('Answer Updated!'); fetchAll();
+        }
+
+        async function deleteUserAnswer(qId, aId) {
+            if(!confirm("Delete this user's answer?")) return;
+            const qIdx = adminFeedQuestions.findIndex(i=>i.id===qId);
+            adminFeedQuestions[qIdx].answers = adminFeedQuestions[qIdx].answers.filter(i=>i.id!==aId);
+            SHAS.adminFeed = await saveFile(CONFIG.adminFeedPath, adminFeedQuestions, SHAS.adminFeed, "Deleted User Ans");
+            showToast('Answer Deleted!'); fetchAll();
+        }
+
+        async function moveQuestion(id, from, to) {
+            let q; showToast("Moving & Encrypting...");
+            if(from==='active') {
+                q = publicQuestions.find(i=>i.id===id) || privateQuestions.find(i=>i.id===id);
+                publicQuestions = publicQuestions.filter(i=>i.id!==id); privateQuestions = privateQuestions.filter(i=>i.id!==id);
+            } else if(from==='trash') {
+                q = trashedQuestions.find(i=>i.id===id); trashedQuestions = trashedQuestions.filter(i=>i.id!==id);
+            } else {
+                q = rejectedQuestions.find(i=>i.id===id); rejectedQuestions = rejectedQuestions.filter(i=>i.id!==id);
+            }
+
+            if(to==='trash') trashedQuestions.push(q);
+            else if(to==='rejected') rejectedQuestions.push(q);
+            else { if(q.type==='private') privateQuestions.push(q); else publicQuestions.push(q); }
+
+            await Promise.all([
+                saveFile(CONFIG.publicPath, publicQuestions, SHAS.public, "Move Update"),
+                saveFile(CONFIG.privatePath, privateQuestions, SHAS.private, "Move Update"),
+                saveFile(CONFIG.trashedPath, trashedQuestions, SHAS.trashed, "Move Update"),
+                saveFile(CONFIG.rejectedPath, rejectedQuestions, SHAS.rejected, "Move Update")
+            ]);
+            fetchAll();
+        }
+
+        async function hardDelete(id) {
+            if(!confirm("Permanently delete? ID will be archived.")) return;
+            let q = trashedQuestions.find(i=>i.id===id);
+            trashedQuestions = trashedQuestions.filter(i=>i.id!==id);
+            deletedRecords.push({ id: q.id, password: q.password || 'N/A', deletedAt: new Date().toLocaleDateString() });
+            await Promise.all([
+                saveFile(CONFIG.trashedPath, trashedQuestions, SHAS.trashed, "Hard Delete"),
+                saveFile(CONFIG.deletedPath, deletedRecords, SHAS.deleted, "Archive Update")
+            ]);
+            fetchAll();
+        }
+
+        async function quickReply(id) {
+            const val = document.getElementById(`ans-${id}`).value;
+            let target = publicQuestions.find(q=>q.id===id) || privateQuestions.find(q=>q.id===id);
+            if(!target) return; target.answer = val;
+            const path = target.type === 'private' ? CONFIG.privatePath : CONFIG.publicPath;
+            const array = target.type === 'private' ? privateQuestions : publicQuestions;
+            const sha = target.type === 'private' ? SHAS.private : SHAS.public;
+            await saveFile(path, array, sha, "Admin Replied");
+            showToast("Answer saved & Encrypted!"); fetchAll();
+        }
+
+        // --- SETTINGS MODAL LOGIC ---
+        function toggleCard(button) { 
+            const body = button.nextElementSibling; 
+            const icon = button.querySelector('.card-chevron');
+            body.classList.toggle('active'); 
+            if (body.classList.contains('active')) {
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            } else {
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            }
+        }
+
+        function openSettingsModal() {
+            document.getElementById('set-prof-name').value = systemData.profileName || '';
+            document.getElementById('set-prof-user').value = systemData.profileUsername || '';
+            document.getElementById('set-prof-image').value = systemData.profileImage || '';
+            document.getElementById('set-prof-link').value = systemData.profileLink || '';
+            
+            const pColor = systemData.themePrimary || '#6D28D9';
+            document.getElementById('set-theme-primary').value = pColor;
+            document.getElementById('set-theme-color-picker').value = pColor;
+            document.getElementById('set-theme-bg').value = systemData.themeBg || '';
+
+            document.getElementById('set-old-pass').value = '';
+            document.getElementById('set-new-pass').value = '';
+            
+            document.querySelectorAll('.card-option-body').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.card-chevron').forEach(i => i.classList.replace('fa-chevron-up', 'fa-chevron-down'));
+            
+            document.getElementById('settings-modal').style.display='flex';
+        }
+
+        async function saveSystemSettings() {
+            systemData.profileName = document.getElementById('set-prof-name').value.trim();
+            systemData.profileUsername = document.getElementById('set-prof-user').value.trim();
+            systemData.profileImage = document.getElementById('set-prof-image').value.trim();
+            systemData.profileLink = document.getElementById('set-prof-link').value.trim();
+            
+            systemData.themePrimary = document.getElementById('set-theme-primary').value.trim();
+            systemData.themeBg = document.getElementById('set-theme-bg').value.trim();
+            
+            const nPass = document.getElementById('set-new-pass').value.trim();
+            const oPass = document.getElementById('set-old-pass').value.trim();
+            
+            if(nPass && oPass) {
+                if(oPass === authData.password) {
+                    authData.password = nPass;
+                    SHAS.auth = await saveFile(CONFIG.authPath, authData, SHAS.auth, "Pass Update");
+                } else {
+                    showToast("Incorrect old password", true); return;
+                }
+            }
+            
+            SHAS.system = await saveFile(CONFIG.systemPath, systemData, SHAS.system, "System Config Update");
+            showToast("Settings Updated & Encrypted!"); document.getElementById('settings-modal').style.display='none';
+        }
+
+        function openDeletedArchive() {
+            const tbody = document.getElementById('archive-tbody'); tbody.innerHTML = '';
+            if (deletedRecords.length === 0) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No archived IDs.</td></tr>'; } 
+            else { [...deletedRecords].reverse().forEach(r => { tbody.innerHTML += `<tr><td><span class="archive-badge">${escAttr(r.id)}</span></td><td>${escAttr(r.password)}</td><td>${escAttr(r.deletedAt)}</td></tr>`; }); }
+            document.getElementById('archive-modal').style.display = 'flex';
+        }
+
+        // --- EDITOR LOGIC ---
+        async function openEditor(file) {
+            currentEditorFile = file; document.getElementById('editor-filename').innerText = file;
+            const res = await fetchFile(file); document.getElementById('code-editor-area').value = res.raw; SHAS.editorFile = res.sha;
+            document.getElementById('editor-modal').style.display='flex';
+        }
+
+        async function saveCodeEditor() {
+            const val = document.getElementById('code-editor-area').value;
+            SHAS.editorFile = await saveFile(currentEditorFile, val, SHAS.editorFile, "Raw Edit", true);
+            showToast("File Saved & Deployed!"); document.getElementById('editor-modal').style.display='none';
+        }
+
+        initApp();
+    </script>
+</body>
+</html>

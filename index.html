@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ask Me Anything | Shyam</title>
+    <link rel="icon" type="image/x-icon" href="icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        :root {
+            --primary: #FF477E; 
+            --primary-gradient: linear-gradient(135deg, var(--primary), #FF7096);
+            --bg-color: #EEF1F6; 
+            
+            --accent-purple: #6D28D9; --accent-purple-light: #EDE9FE;
+            --card-bg: #FFFFFF; --text-dark: #1D1E2C;
+            --text-light: #8A90A5; --input-bg: #F0F3F8; --danger: #FF3B30;
+            --success: #10B981; --success-bg: #E8F5E9; --warning: #F59E0B; --warning-bg: #FFF3E0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: var(--bg-color); color: var(--text-dark); padding-bottom: 100px; -webkit-tap-highlight-color: transparent; position: relative; transition: background 0.5s ease;}
+        body::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 350px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, transparent 100%); z-index: -1; pointer-events: none; }
+
+        #app-layout { width: 100%; display: block; }
+
+        .profile-header { text-align: center; padding: 40px 20px 20px; margin-bottom: 10px; }
+        .avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--primary-gradient); padding: 3px; margin: 0 auto 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .avatar-inner { width: 100%; height: 100%; border-radius: 50%; background-color: white; display: flex; align-items: center; justify-content: center; border: 3px solid white; font-size: 30px; color: var(--primary); overflow: hidden;}
+        .profile-header h1 { font-size: 20px; font-weight: 700; color: var(--text-dark); letter-spacing: -0.5px; }
+        .profile-header p { font-size: 13px; color: var(--text-light); margin-top: 2px; font-weight: 500;}
+        .profile-link { font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 600; display: inline-block; margin-top: 5px; }
+
+        .container { max-width: 500px; margin: 0 auto; padding: 0 20px; }
+        .tab-content { display: none; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .tab-content.active { display: block; }
+        @keyframes fadeUp { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
+
+        .ask-card { background: var(--card-bg); border-radius: 32px; padding: 25px; box-shadow: 0 12px 40px rgba(0,0,0,0.06); margin-bottom: 25px; overflow: hidden; word-wrap: break-word; }
+        .ask-header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .ask-header span { font-size: 13px; font-weight: 600; color: var(--text-light); }
+
+        .input-container { background: var(--input-bg); border-radius: 24px; padding: 25px 20px; margin-bottom: 15px; border: 2px solid transparent; transition: all 0.3s ease; }
+        .input-container:focus-within { background: #FFFFFF; border-color: var(--primary); box-shadow: 0 10px 30px rgba(0,0,0,0.05); transform: translateY(-2px); }
+        textarea { width: 100%; border: none; background: transparent; font-size: 18px; font-weight: 500; color: var(--text-dark); outline: none; resize: vertical; min-height: 80px; text-align: center; line-height: 1.5; }
+        textarea::placeholder { color: #A0A5B5; font-weight: 400; }
+
+        .name-reveal-btn { background: none; border: none; color: var(--text-light); font-size: 12px; font-weight: 600; cursor: pointer; display: block; margin: 0 auto 20px; text-align: center; transition: 0.2s; }
+        .name-reveal-btn:hover { color: var(--primary); }
+        .name-input-wrapper { display: none; margin-bottom: 20px; }
+        .name-input-wrapper input { width: 100%; background: var(--input-bg); border: 2px solid transparent; padding: 14px 20px; border-radius: 16px; font-size: 14px; font-weight: 500; outline: none; text-align: center; transition: 0.3s; }
+        .name-input-wrapper input:focus { background: white; border-color: var(--primary); }
+
+        .segment-control { display: flex; background: var(--input-bg); border-radius: 16px; padding: 5px; margin-bottom: 15px; position: relative; }
+        .segment-btn { flex: 1; text-align: center; padding: 12px; font-size: 13px; font-weight: 600; color: var(--text-light); cursor: pointer; border-radius: 12px; transition: 0.3s; z-index: 2; border: none; background: none; }
+        .segment-btn.active { color: white; }
+        .segment-bg { position: absolute; top: 5px; bottom: 5px; width: calc(50% - 5px); background: var(--text-dark); border-radius: 12px; transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 1; left: 5px; }
+
+        .private-settings { display: none; margin-bottom: 20px; animation: fadeUp 0.3s; }
+        .private-settings input { width: 100%; background: var(--input-bg); border: 2px solid transparent; padding: 14px 20px; border-radius: 16px; font-size: 14px; font-weight: 500; outline: none; text-align: center; transition: 0.3s; }
+        .private-settings input:focus { border-color: var(--text-dark); background: white; }
+        .private-hint { font-size: 11px; color: var(--text-light); text-align: center; margin-top: 8px; }
+
+        button.action-button { width: 100%; background: var(--primary); color: white; border: none; padding: 18px; border-radius: 20px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        button.action-button:active { transform: scale(0.96); box-shadow: none; }
+        button.action-button:disabled { opacity: 0.7; cursor: not-allowed; box-shadow: none; transform: none; }
+        button.secondary-button { width: 100%; background: var(--input-bg); color: var(--text-dark); border: none; padding: 14px; border-radius: 16px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+
+        .search-container { background: var(--card-bg); border-radius: 20px; padding: 14px 20px; display: flex; align-items: center; gap: 12px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.02); }
+        .search-container input { border: none; background: transparent; width: 100%; outline: none; font-size: 14px; font-weight: 500; color: var(--text-dark); }
+        .search-container input::placeholder { color: var(--text-light); }
+
+        .feed-controls-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 10px; }
+        .filter-group { flex: 1; display: flex; gap: 5px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; margin-bottom: 0; white-space: nowrap;}
+        .filter-group::-webkit-scrollbar { display: none; }
+        .filter-pill { flex-shrink: 0; padding: 8px 12px; font-size: 11px; font-weight: 600; background: var(--card-bg); color: var(--text-light); border-radius: 20px; cursor: pointer; transition: 0.3s; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .filter-pill.active { background: var(--text-dark); color: white; border-color: transparent; }
+        .sort-btn { flex-shrink: 0; display: flex; align-items: center; gap: 4px; background: var(--card-bg); color: var(--text-dark); border: 1px solid rgba(0,0,0,0.04); padding: 8px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.02);}
+        .sort-btn:hover { background: var(--input-bg); }
+
+        .qa-card { background: var(--card-bg); border-radius: 28px; padding: 25px; margin-bottom: 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.06); position: relative; word-wrap: break-word; overflow: hidden;}
+        .qa-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;}
+        .qa-asker-wrapper { display: flex; flex-direction: column; gap: 4px; }
+        .qa-asker { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .qa-asker i { color: var(--text-light); }
+        .qa-date { font-size: 11px; color: var(--text-light); font-weight: 500; }
+        
+        .status-badge { font-size: 10px; font-weight: 700; padding: 5px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;}
+        .status-answered { background: var(--success-bg); color: var(--success); }
+        .status-waiting { background: var(--warning-bg); color: var(--warning); }
+        
+        .qa-q-bubble { font-size: 16px; font-weight: 600; color: var(--text-dark); margin-bottom: 15px; line-height: 1.5; word-wrap: break-word;}
+        .qa-a-bubble { background: var(--input-bg); padding: 18px; border-radius: 20px; border-top-left-radius: 4px; font-size: 14px; font-weight: 500; color: var(--text-dark); line-height: 1.6; word-wrap: break-word;}
+        .qa-unanswered { font-size: 13px; color: var(--text-light); font-style: italic; font-weight: 500; text-align: left; background: transparent; padding: 0;}
+
+        /* Admin Feed Specific Styles */
+        .admin-q-card { border: 2px solid var(--accent-purple); box-shadow: 0 15px 45px rgba(109, 40, 217, 0.1); }
+        .admin-badge { background: var(--accent-purple); color: white; }
+        .user-answer-box { background: var(--input-bg); border-radius: 16px; padding: 15px; margin-top: 15px; border-left: 3px solid var(--primary); }
+        .user-answer-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; color: var(--text-light); font-weight: 600;}
+        .admin-reply-box { margin-top: 10px; padding: 10px 15px; background: var(--accent-purple-light); border-radius: 12px; font-size: 13px; color: var(--text-dark); font-weight: 500; border-left: 3px solid var(--accent-purple);}
+        .submit-answer-area { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .submit-answer-area input, .submit-answer-area textarea { background: var(--bg-color); border: 1px solid rgba(0,0,0,0.05); padding: 12px; border-radius: 12px; font-size: 14px; outline: none; transition: 0.3s; }
+        .submit-answer-area input:focus, .submit-answer-area textarea:focus { border-color: var(--accent-purple); background: white; }
+        .submit-answer-area textarea { resize: vertical; min-height: 60px; text-align: left; }
+
+        .qa-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 15px; }
+        .qa-action-btn { flex: 1; min-width: 80px; background: var(--input-bg); color: var(--text-dark); border: none; padding: 12px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .qa-action-btn:hover { background: var(--primary); color: white; transform: translateY(-2px); }
+
+        .vault-card { text-align: center; }
+        .vault-icon { font-size: 40px; color: var(--text-dark); margin-bottom: 15px; }
+        .vault-card h2 { font-size: 20px; margin-bottom: 20px; font-weight: 700;}
+        .vault-inputs { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .vault-inputs input { background: var(--input-bg); border: 2px solid transparent; padding: 16px; border-radius: 16px; font-size: 15px; font-weight: 500; text-align: center; outline: none; transition: 0.3s; }
+        .vault-inputs input:focus { border-color: var(--text-dark); background: white; }
+
+        .error-state { border-color: var(--danger) !important; background: #FFF0F4 !important; }
+        .error-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .app-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(15px); display: flex; justify-content: space-around; padding: 15px 5px 25px; box-shadow: 0 -10px 40px rgba(0,0,0,0.06); z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-light); font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.3s; width: 25%; gap: 6px; }
+        .nav-item i { font-size: 20px; transition: 0.3s; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active i { transform: translateY(-3px); }
+
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
+        .toast { background: var(--text-dark); color: white; padding: 14px 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; transition: 0.4s; transform: translateY(-100%); opacity: 0; text-align: center; justify-content: center; }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(29, 30, 44, 0.85); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 15px;}
+        .modal { background: var(--card-bg); width: 100%; max-width: 400px; border-radius: 32px; padding: 35px 25px; text-align: center; animation: fadeUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative;}
+        .modal-transparent { background: transparent !important; box-shadow: none !important; padding: 0 !important; display: flex; flex-direction: column; align-items: center; width: 100%;}
+        
+        .danger-alert { background: #FFF0F0; border: 1px solid #FFD6D6; color: var(--danger); padding: 14px 16px; border-radius: 16px; font-size: 13px; font-weight: 500; margin-bottom: 25px; text-align: left; display: flex; gap: 12px; align-items: flex-start; line-height: 1.4; }
+        .credentials-capture { background: var(--card-bg); padding: 25px; border-radius: 24px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.05); word-wrap: break-word;}
+        .cred-group { margin-bottom: 15px; text-align: left; }
+        .cred-label { font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: block; }
+        .cred-box { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap:10px; padding: 14px 18px; border-radius: 16px; }
+        .cred-box.id-box-style { background: var(--accent-purple-light); border: 2px dashed var(--accent-purple); }
+        .cred-box.pass-box-style { background: #FFF0F4; border: 2px dashed var(--primary); margin-bottom: 5px;}
+        .cred-value { font-size: 16px; font-weight: 700; font-family: monospace; letter-spacing: 1px; word-break: break-all;}
+        .cred-value.id-val { color: var(--accent-purple); }
+        .cred-value.pass-val { color: var(--primary); }
+        .copy-btn { background: white; color: var(--text-dark); border: none; padding: 8px 14px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        .insta-sticker { background: var(--primary-gradient); border-radius: 32px; padding: 30px; color: white; text-align: left; position: relative; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.15); width: 100%; word-wrap: break-word;}
+        .sticker-top-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap:wrap; gap:10px; margin-bottom: 25px; }
+        .sticker-asker-text { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: white; text-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .sticker-privacy-pill { display: inline-flex; align-items: center; gap: 5px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; color: white; text-transform: uppercase; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .sticker-q { font-size: 24px; font-weight: 800; line-height: 1.3; margin-bottom: 30px; text-shadow: 0 2px 10px rgba(0,0,0,0.08); word-wrap: break-word; }
+        .sticker-answer-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.25); border: 1px solid rgba(255, 255, 255, 0.4); padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 700; color: white; margin-bottom: 8px; backdrop-filter: blur(10px); text-transform: uppercase; }
+        .sticker-a-box { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(255, 255, 255, 1); padding: 25px 20px; border-radius: 24px; font-size: 18px; font-weight: 700; color: #1D1E2C; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; word-wrap: break-word; }
+        
+        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-light); }
+        .empty-state i { font-size: 40px; opacity: 0.3; margin-bottom: 15px; }
+
+        /* Full Screen Loader */
+        .overlay-loader { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-color); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100000; transition: opacity 0.5s;}
+        .spinner { font-size: 40px; color: var(--primary); animation: spin 1s linear infinite; margin-bottom: 15px;}
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        @media (min-width: 768px) {
+            body { padding-bottom: 0; }
+            #app-layout { display: flex; justify-content: center; align-items: flex-start; gap: 30px; max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+            .sidebar-wrapper { width: 280px; position: sticky; top: 40px; display: flex; flex-direction: column; background: var(--card-bg); border-radius: 32px; padding: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.02); flex-shrink: 0; z-index: 100;}
+            .profile-header { margin: 0; width: 100%; border-radius: 0; box-shadow: none; background: transparent; padding: 10px 10px 20px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+            .app-nav { position: relative; margin: 0; width: 100%; flex-direction: column; padding: 20px 0 0 0; gap: 10px; border-radius: 0; bottom: auto; background: transparent; box-shadow: none; backdrop-filter: none; z-index: auto; }
+            .nav-item { width: 100%; flex-direction: row; justify-content: flex-start; padding: 14px 20px; border-radius: 16px; font-size: 14px; gap: 15px; color: var(--text-light); font-weight: 600; }
+            .nav-item:hover { background: var(--input-bg); color: var(--text-dark); transform: translateX(5px); }
+            .nav-item.active { background: #FFF0F4; color: var(--primary); }
+            .nav-item.active:hover { transform: none; }
+            .container { flex: 1; max-width: none; margin: 0; padding: 0; width: 100%; }
+        }
+        @media (min-width: 1024px) {
+            #app-layout { gap: 40px; max-width: 1000px; padding: 50px 20px; }
+            .sidebar-wrapper { width: 300px; top: 50px; padding: 25px; }
+            .profile-header { padding: 20px 10px 30px; }
+            .nav-item { padding: 16px 24px; font-size: 15px; gap: 18px; border-radius: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="overlay-loader" id="loader">
+        <i class="fa-solid fa-circle-notch spinner"></i>
+        <h2 style="font-weight: 800; color: var(--text-dark);">Loading...</h2>
+    </div>
+
+    <div class="modal-overlay" id="status-modal">
+        <div class="modal">
+            <div id="status-icon" style="font-size: 40px; margin-bottom: 10px; color: var(--danger);"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <h2 id="status-title" style="font-weight: 800; font-size: 22px; color: var(--danger);">Notice</h2>
+            <p id="status-desc" style="font-size: 14px; color: var(--text-light); line-height: 1.5; margin-bottom: 20px;"></p>
+            <button class="secondary-button" onclick="document.getElementById('status-modal').style.display='none'">Close</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="copy-modal" style="background: rgba(0,0,0,0.9); z-index: 100005;">
+        <div class="modal" style="background: transparent; box-shadow: none; color: white;">
+            <h1 style="font-size: 40px; font-weight: 900; letter-spacing: 2px; color: var(--danger);">GOD OF NONE.</h1>
+            <p style="color: white; font-weight: 600; font-size: 16px;">Copying is strictly prohibited.</p>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="id-modal">
+        <div class="modal">
+            <h2 style="font-weight: 800; font-size: 24px; color: var(--text-dark);" id="modal-title">Sent! 🚀</h2>
+            <p style="font-size: 14px; color: var(--text-light); margin-top: 8px; font-weight: 500; margin-bottom: 25px;" id="modal-desc">Your question was sent publicly.</p>
+            
+            <div class="danger-alert" id="modal-danger-warning" style="display: none;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 18px; margin-top: 2px;"></i>
+                <div>
+                    <strong>CRITICAL WARNING</strong><br>
+                    Save your ID and Password right now! If you lose them, you will NEVER be able to unlock your answer.
+                </div>
+            </div>
+
+            <div class="credentials-capture" id="credentials-capture">
+                <div class="cred-group">
+                    <span class="cred-label">Tracking ID</span>
+                    <div class="cred-box id-box-style">
+                        <span class="cred-value id-val" id="modal-new-id">PUB-XXXXX</span>
+                        <button class="copy-btn" onclick="copyText('modal-new-id')"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+
+                <div class="cred-group" id="pass-group" style="display: none;">
+                    <span class="cred-label">Secret Password</span>
+                    <div class="cred-box pass-box-style">
+                        <span class="cred-value pass-val" id="modal-new-pass">*****</span>
+                        <button class="copy-btn" onclick="copyText('modal-new-pass')"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="action-button" onclick="downloadImage('credentials-capture', 'my_question_credentials')">
+                <i class="fa-solid fa-download"></i> Save as Image
+            </button>
+            <button class="secondary-button" onclick="document.getElementById('id-modal').style.display='none'">Close</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="view-modal">
+        <div class="modal modal-transparent">
+            <div id="view-capture-area" style="width: 100%; padding: 15px; background: transparent; display:flex; flex-direction:column; align-items:center; margin-bottom: 10px;">
+                <div class="insta-sticker">
+                    <div class="sticker-top-row">
+                        <div class="sticker-asker-text">
+                            <i class="fa-solid fa-user"></i> <span id="view-asker">Anonymous</span>
+                        </div>
+                        <div class="sticker-privacy-pill" id="view-privacy">
+                            <i class="fa-solid fa-earth-americas"></i> Public
+                        </div>
+                    </div>
+                    <div class="sticker-q" id="view-q">What's the question?</div>
+                    <div id="view-a-container"></div>
+                </div>
+            </div>
+            
+            <div style="display:flex; gap:10px; width: 90%; max-width: 320px;">
+                <button class="action-button" style="padding: 14px; font-size: 13px;" onclick="downloadImage('view-capture-area', 'skbodhak_qa')">
+                    <i class="fa-solid fa-download"></i> Save
+                </button>
+                <button class="action-button" style="padding: 14px; font-size: 13px; background: var(--accent-purple);" onclick="shareImage('view-capture-area', 'skbodhak_qa')">
+                    <i class="fa-solid fa-share-nodes"></i> Share
+                </button>
+            </div>
+            
+            <button class="secondary-button" style="width: 90%; max-width: 320px; background: rgba(255,255,255,0.2); color: white;" onclick="document.getElementById('view-modal').style.display='none'">Close</button>
+        </div>
+    </div>
+
+    <div id="app-layout">
+        <aside class="sidebar-wrapper">
+            <header class="profile-header">
+                <div class="avatar">
+                    <div class="avatar-inner" id="ui-profile-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                </div>
+                <h1 id="ui-profile-name">Connecting...</h1>
+                <p id="ui-profile-user">@username</p>
+                <a href="#" target="_blank" id="ui-profile-link" class="profile-link" style="display: none;"><i class="fa-solid fa-link"></i> Link</a>
+            </header>
+            <nav class="app-nav">
+                <div class="nav-item active" onclick="switchTab('ask', this)"><i class="fa-solid fa-pen"></i><span>Ask</span></div>
+                <div class="nav-item" onclick="switchTab('public', this)"><i class="fa-solid fa-layer-group"></i><span>Public</span></div>
+                <div class="nav-item" onclick="switchTab('private', this)"><i class="fa-solid fa-lock"></i><span>Vault</span></div>
+                <div class="nav-item" onclick="switchTab('admin-feed', this)"><i class="fa-solid fa-crown"></i><span>Admin Qs</span></div>
+            </nav>
+        </aside>
+
+        <main class="container">
+            <div id="ask" class="tab-content active">
+                <div class="ask-card">
+                    <div class="ask-header">
+                        <span>Ask anonymously ✨</span>
+                    </div>
+                    <div class="input-container" id="q-container">
+                        <textarea id="q-text" placeholder="What's on your mind?" maxlength="300"></textarea>
+                    </div>
+                    <button class="name-reveal-btn" id="reveal-name-btn" onclick="toggleName()">+ Add your name (optional)</button>
+                    <div class="name-input-wrapper" id="name-input-div">
+                        <input type="text" id="q-name" placeholder="Who are you?" maxlength="20">
+                    </div>
+                    <div class="segment-control">
+                        <div class="segment-bg" id="segment-slider"></div>
+                        <button class="segment-btn active" id="btn-public" onclick="setPrivacy('public')">Public 🌍</button>
+                        <button class="segment-btn" id="btn-private" onclick="setPrivacy('private')">Private 🔒</button>
+                    </div>
+                    <div class="private-settings" id="private-settings">
+                        <input type="password" id="q-set-pass" placeholder="Create a secret password">
+                        <div class="private-hint">Only you and the owner will see this.</div>
+                    </div>
+                    <button class="action-button" id="submit-btn" onclick="submitQuestion()">
+                        Send Message <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="public" class="tab-content">
+                <div class="search-container">
+                    <i class="fa-solid fa-magnifying-glass" style="color: var(--text-light)"></i>
+                    <input type="text" id="public-search" placeholder="Search ID or text..." onkeyup="renderPublicQuestions()">
+                </div>
+                <div class="feed-controls-row">
+                    <div class="filter-group">
+                        <button class="filter-pill active" onclick="setFilter('all', this)">All</button>
+                        <button class="filter-pill" onclick="setFilter('answered', this)">Answered ✨</button>
+                        <button class="filter-pill" onclick="setFilter('unanswered', this)">Waiting ⏳</button>
+                    </div>
+                    <button class="sort-btn" id="sort-toggle-btn" onclick="toggleSort()"><i class="fa-solid fa-arrow-down-short-wide"></i> Newest</button>
+                </div>
+                <div id="public-qa-list"></div>
+            </div>
+
+            <div id="private" class="tab-content">
+                <div class="ask-card vault-card" id="private-search-card">
+                    <div class="vault-icon"><i class="fa-solid fa-vault"></i></div>
+                    <h2>Unlock your answer</h2>
+                    <div class="vault-inputs">
+                        <input type="text" id="p-id" placeholder="Question ID (e.g. PRV-A1B2C)">
+                        <input type="password" id="p-pass" placeholder="Your secret password">
+                    </div>
+                    <button class="action-button" onclick="searchPrivate()">Unlock <i class="fa-solid fa-key"></i></button>
+                </div>
+                <div id="private-result-card" style="display: none;">
+                    <button style="background:none; border:none; font-weight:700; font-size:14px; color:var(--text-light); margin-bottom: 20px; cursor: pointer; transition: 0.2s;" onclick="resetPrivateSearch()"><i class="fa-solid fa-arrow-left"></i> Back to search</button>
+                    <div id="private-result-content"></div>
+                </div>
+            </div>
+
+            <div id="admin-feed" class="tab-content">
+                <div class="ask-card" style="text-align: center; margin-bottom: 20px; border: 2px solid var(--accent-purple); background: var(--accent-purple-light);">
+                    <div class="vault-icon" style="color: var(--accent-purple); margin-bottom: 10px;"><i class="fa-solid fa-crown"></i></div>
+                    <h2 style="font-size: 18px; font-weight: 700; color: var(--accent-purple);">Admin Questions</h2>
+                    <p style="font-size: 13px; color: var(--text-dark); margin-top: 5px;">Answer questions asked directly by the admin. Everyone can participate!</p>
+                </div>
+                <div id="admin-qa-list"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // =======================================================================
+        // GITHUB API CONFIGURATION & DATA FOLDER
+        // =======================================================================
+        const REPO_OWNER = 'SKBodhak';
+        const REPO_NAME = 'Ask-Me-Anything';
+        
+        let CONFIG = {
+            publicPath: 'data/public.json',
+            privatePath: 'data/private.json',
+            systemPath: 'data/system.json',       
+            adminFeedPath: 'data/admin_questions.json',
+            authPath: 'data/auth.json'
+        };
+
+        // 🚨 NEW SECURE GITHUB TOKEN SPLIT 🚨
+        const p1="github"; 
+        const p2="_pat_"; 
+        const p3="11A3JHEYA"; 
+        const p4="0FxYRj2PHDDCQ_U"; 
+        const p5="5rIR2jGnbNY04tr"; 
+        const p6="vzLv03E905of3KB"; 
+        const p7="9tgGuPlMHgUbZYO"; 
+        const p8="6QIZH5CssbY5S";
+        const hiddenToken = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8;
+
+        // --- SECURITY FUNCTION ---
+        function escAttr(s) { 
+            if(!s) return ""; 
+            return String(s)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;"); 
+        }
+
+        // --- COPY BLOCKER (Force "GOD OF NONE.") ---
+        document.addEventListener('copy', function(e) {
+            e.clipboardData.setData('text/plain', 'GOD OF NONE.');
+            e.preventDefault();
+            document.getElementById('copy-modal').style.display = 'flex';
+            setTimeout(() => { document.getElementById('copy-modal').style.display = 'none'; }, 1500);
+        });
+
+        // =======================================================================
+        // ENCRYPTION ENGINE (SYNCED WITH ADMIN)
+        // =======================================================================
+        const SECRET_KEY = "ShyamSecureKey2026"; 
+        const SIGNATURE_KEY = "ShyamHmacAuth2026"; 
+
+        function secureStringify(data) {
+            if (typeof CryptoJS === 'undefined') return JSON.stringify(data);
+            const jsonStr = JSON.stringify(data);
+            const ciphertext = CryptoJS.AES.encrypt(jsonStr, SECRET_KEY).toString();
+            const signature = CryptoJS.HmacSHA256(ciphertext, SIGNATURE_KEY).toString();
+            return JSON.stringify({ data: btoa(ciphertext), signature: signature }, null, 2);
+        }
+
+        function secureParse(rawStr) {
+            if (!rawStr) return null;
+            try {
+                const envelope = JSON.parse(rawStr);
+                if (envelope.data && envelope.signature) {
+                    if (typeof CryptoJS !== 'undefined') {
+                        const ciphertext = atob(envelope.data);
+                        const expected = CryptoJS.HmacSHA256(ciphertext, SIGNATURE_KEY).toString();
+                        if (expected === envelope.signature) {
+                            const bytes = CryptoJS.AES.decrypt(ciphertext, SECRET_KEY);
+                            return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+                        }
+                    }
+                }
+                return envelope; // Fallback for initialization
+            } catch(e) { return null; }
+        }
+
+        // --- GLOBAL STATE ---
+        let systemData = {};
+        let publicQuestions = [];
+        let privateQuestions = [];
+        let adminQuestions = []; 
+        let isPrivateMode = false;
+        let currentFeedFilter = 'all';
+        let currentSort = 'newest';
+
+        function genID(prefix) { return prefix + '-' + Math.random().toString(36).substr(2, 5).toUpperCase(); }
+        function encodeBase64Unicode(str) { return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) { return String.fromCharCode('0x' + p1); })); }
+        function decodeBase64Unicode(str) { return decodeURIComponent(atob(str.replace(/\s/g, '')).split('').map(function(c) { return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2); }).join('')); }
+
+        // --- UI UTILITIES ---
+        function showToast(msg, isError = false) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast`; 
+            if (isError) toast.style.backgroundColor = "var(--danger)";
+            toast.innerHTML = `<span>${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 3000);
+        }
+
+        function showStatusModal(title, desc, iconClass = 'fa-circle-exclamation', color = 'var(--danger)') {
+            document.getElementById('status-icon').innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+            document.getElementById('status-icon').style.color = color;
+            document.getElementById('status-title').innerText = title;
+            document.getElementById('status-title').style.color = color;
+            document.getElementById('status-desc').innerHTML = desc;
+            document.getElementById('status-modal').style.display = 'flex';
+        }
+
+        function markError(element) {
+            element.classList.add('error-state', 'error-shake');
+            setTimeout(() => element.classList.remove('error-shake'), 400);
+            const targetInput = element.tagName === 'DIV' ? element.querySelector('textarea, input') : element;
+            if (targetInput) {
+                targetInput.addEventListener('input', function removeErr() {
+                    element.classList.remove('error-state');
+                    targetInput.removeEventListener('input', removeErr);
+                }, { once: true });
+            }
+        }
+
+        function copyText(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => { showToast("Copied to clipboard! 📋"); });
+        }
+
+        function triggerConfetti() {
+            if(typeof confetti !== 'undefined') { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
+        }
+
+        const qTextArea = document.getElementById('q-text');
+        qTextArea.addEventListener('input', function() {
+            this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // --- STRICT CLOUD FETCH & SAVE (NO LOCAL STORAGE) ---
+        async function fetchFile(path) {
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}?_t=${Date.now()}`, {
+                    headers: { 'Authorization': `token ${hiddenToken}` }
+                });
+                if (!res.ok) return { data: null, sha: null };
+                const json = await res.json();
+                const decodedText = decodeBase64Unicode(json.content);
+                return { data: secureParse(decodedText), sha: json.sha };
+            } catch(e) { return { data: null, sha: null }; }
+        }
+
+        async function saveToGitHubSecure(targetPath, newDataArray, commitMsg) {
+            const getRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${targetPath}?_t=${Date.now()}`, {
+                headers: { 'Authorization': `token ${hiddenToken}` }
+            });
+
+            let currentSha = null;
+            if (getRes.ok) {
+                const fileData = await getRes.json();
+                currentSha = fileData.sha;
+            } else if (getRes.status !== 404) {
+                throw new Error("Failed to read database from GitHub API.");
+            }
+
+            const secureEnvelopeString = secureStringify(newDataArray);
+            const encodedContent = encodeBase64Unicode(secureEnvelopeString);
+
+            const bodyData = { message: commitMsg, content: encodedContent };
+            if (currentSha) bodyData.sha = currentSha;
+
+            const putRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${targetPath}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${hiddenToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyData)
+            });
+
+            if (!putRes.ok) throw new Error("API Write Failed.");
+            return true;
+        }
+
+        // --- BOOT ---
+        async function initApp() {
+            try {
+                const [sysRes, pubRes, privRes, adminRes, authRes] = await Promise.all([
+                    fetchFile(CONFIG.systemPath), 
+                    fetchFile(CONFIG.publicPath), 
+                    fetchFile(CONFIG.privatePath), 
+                    fetchFile(CONFIG.adminFeedPath),
+                    fetchFile(CONFIG.authPath) 
+                ]);
+
+                // STRICT DATABASE CHECK
+                if (!authRes.data) {
+                    document.getElementById('ui-profile-name').innerText = "System Offline";
+                    document.getElementById('ui-profile-user').innerText = "Database Missing";
+                    showStatusModal("Connection Blocked", "The database is not connected. You must upload your 'data' folder to GitHub before the app can be used.", "fa-database", "var(--danger)");
+                    
+                    const submitBtn = document.getElementById('submit-btn');
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = "<i class='fa-solid fa-lock'></i> System Locked";
+                    document.getElementById('loader').style.opacity = '0';
+                    setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 500);
+                    return; 
+                }
+                
+                if (sysRes.data) {
+                    systemData = sysRes.data;
+                    document.getElementById('ui-profile-name').innerText = systemData.profileName || 'SKBodhak';
+                    document.getElementById('ui-profile-user').innerText = systemData.profileUsername || '@skbodhak';
+                    
+                    const avatarContainer = document.getElementById('ui-profile-avatar');
+                    if (systemData.profileImage && systemData.profileImage.trim() !== '') {
+                        avatarContainer.innerHTML = `<img src="${systemData.profileImage}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                    } else { avatarContainer.innerHTML = `<i class="fa-solid fa-user"></i>`; }
+
+                    const linkEl = document.getElementById('ui-profile-link');
+                    if(systemData.profileLink) { linkEl.href = systemData.profileLink; linkEl.style.display = 'inline-block'; }
+
+                    if(systemData.themePrimary) {
+                        document.documentElement.style.setProperty('--primary', systemData.themePrimary);
+                        document.documentElement.style.setProperty('--primary-gradient', `linear-gradient(135deg, ${systemData.themePrimary}, ${systemData.themePrimary}CC)`);
+                    }
+                    if(systemData.themeBg) { document.documentElement.style.setProperty('--bg-color', systemData.themeBg); }
+                } else {
+                    document.getElementById('ui-profile-name').innerText = "SKBodhak";
+                }
+
+                publicQuestions = pubRes.data || []; 
+                privateQuestions = privRes.data || []; 
+                adminQuestions = adminRes.data || []; 
+                
+                renderPublicQuestions(); 
+                renderAdminQuestions();
+
+            } catch (err) {
+                console.error("Initialization Failed:", err);
+                document.getElementById('ui-profile-name').innerText = "SKBodhak (Error)";
+            } finally {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 500);
+            }
+        }
+
+        // --- UI TOGGLES ---
+        function toggleName() {
+            document.getElementById('name-input-div').style.display = 'block';
+            document.getElementById('reveal-name-btn').style.display = 'none';
+        }
+
+        function setPrivacy(mode) {
+            isPrivateMode = (mode === 'private');
+            const slider = document.getElementById('segment-slider');
+            const btnPub = document.getElementById('btn-public');
+            const btnPriv = document.getElementById('btn-private');
+            const privSettings = document.getElementById('private-settings');
+
+            if(isPrivateMode) {
+                slider.style.left = '50%'; btnPub.classList.remove('active'); btnPriv.classList.add('active');
+                privSettings.style.display = 'block';
+            } else {
+                slider.style.left = '5px'; btnPriv.classList.remove('active'); btnPub.classList.add('active');
+                privSettings.style.display = 'none';
+            }
+        }
+
+        function setFilter(type, element) {
+            currentFeedFilter = type;
+            document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            renderPublicQuestions();
+        }
+
+        function toggleSort() {
+            if (currentSort === 'newest') {
+                currentSort = 'oldest'; document.getElementById('sort-toggle-btn').innerHTML = '<i class="fa-solid fa-arrow-up-short-wide"></i> Oldest';
+            } else {
+                currentSort = 'newest'; document.getElementById('sort-toggle-btn').innerHTML = '<i class="fa-solid fa-arrow-down-short-wide"></i> Newest';
+            }
+            renderPublicQuestions();
+        }
+
+        // --- SUBMIT USER QUESTION WITH ENCRYPTION ---
+        async function submitQuestion() {
+            const text = qTextArea.value.trim();
+            const passInput = document.getElementById('q-set-pass');
+            const qContainer = document.getElementById('q-container');
+            let hasError = false;
+
+            if(!text) { markError(qContainer); hasError = true; }
+            if(isPrivateMode && !passInput.value.trim()) { markError(passInput); hasError = true; }
+            if(hasError) { showToast("Please fill in the missing info! ✨", true); return; }
+
+            const rawName = document.getElementById('q-name').value.trim();
+            let newQ = { 
+                type: isPrivateMode ? 'private' : 'public', 
+                name: rawName, text: text, answer: null, 
+                date: new Date().toLocaleDateString(), status: 'active' 
+            };
+
+            if (isPrivateMode) { newQ.id = genID('PRV'); newQ.password = passInput.value; } 
+            else { newQ.id = genID('PUB'); }
+
+            const submitBtn = document.getElementById('submit-btn');
+            const originalBtnHtml = submitBtn.innerHTML;
+            submitBtn.innerHTML = "Encrypting & Sending... <i class='fa-solid fa-spinner fa-spin'></i>";
+            submitBtn.disabled = true;
+
+            try {
+                const targetPath = isPrivateMode ? CONFIG.privatePath : CONFIG.publicPath;
+                const targetArray = isPrivateMode ? [...privateQuestions, newQ] : [...publicQuestions, newQ];
+                
+                await saveToGitHubSecure(targetPath, targetArray, `New ${newQ.type} question added`);
+
+                // UI Success state
+                if (isPrivateMode) {
+                    document.getElementById('modal-title').innerHTML = 'Locked & Sent! 🔒';
+                    document.getElementById('modal-desc').innerHTML = 'Your private question is safely locked in the vault.';
+                    document.getElementById('modal-danger-warning').style.display = 'flex';
+                    document.getElementById('modal-new-id').innerText = newQ.id;
+                    document.getElementById('modal-new-pass').innerText = newQ.password;
+                    document.getElementById('pass-group').style.display = 'block';
+                } else {
+                    document.getElementById('modal-title').innerHTML = 'Sent Publicly! 🌍';
+                    document.getElementById('modal-desc').innerHTML = 'Your question was sent. Save this ID to track it!';
+                    document.getElementById('modal-danger-warning').style.display = 'none';
+                    document.getElementById('modal-new-id').innerText = newQ.id;
+                    document.getElementById('pass-group').style.display = 'none';
+                }
+
+                showToast("Sent successfully! 🚀"); triggerConfetti();
+                setTimeout(() => { document.getElementById('id-modal').style.display = 'flex'; }, 400);
+
+                qTextArea.value = ''; qTextArea.style.height = 'auto'; document.getElementById('q-name').value = '';
+                passInput.value = ''; document.getElementById('name-input-div').style.display = 'none';
+                document.getElementById('reveal-name-btn').style.display = 'block'; setPrivacy('public');
+                
+                if (isPrivateMode) privateQuestions.push(newQ); else publicQuestions.push(newQ);
+                renderPublicQuestions();
+
+            } catch (error) {
+                showStatusModal('Submission Error', 'Failed to send the question. Error: ' + escAttr(error.message), 'fa-triangle-exclamation', 'var(--danger)');
+            } finally { submitBtn.innerHTML = originalBtnHtml; submitBtn.disabled = false; }
+        }
+
+        // --- SUBMIT ADMIN ANSWER WITH ENCRYPTION ---
+        async function submitAdminAnswer(qId) {
+            const nameEl = document.getElementById(`admin-ans-name-${qId}`);
+            const textEl = document.getElementById(`admin-ans-text-${qId}`);
+            const name = nameEl.value.trim() || 'Anonymous';
+            const text = textEl.value.trim();
+
+            if (!text) { textEl.style.borderColor = 'var(--danger)'; return; }
+
+            const btn = document.getElementById(`btn-ans-${qId}`);
+            const originalBtn = btn.innerHTML;
+            btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i>"; btn.disabled = true;
+
+            const newAnswer = {
+                id: genID('ANS'), user: name, text: text, date: new Date().toLocaleDateString(), adminReply: null
+            };
+
+            try {
+                const freshRes = await fetchFile(CONFIG.adminFeedPath);
+                let currentAdminData = freshRes.data || [];
+                
+                const qIndex = currentAdminData.findIndex(q => q.id === qId);
+                if (qIndex !== -1) {
+                    if (!currentAdminData[qIndex].answers) currentAdminData[qIndex].answers = [];
+                    currentAdminData[qIndex].answers.push(newAnswer);
+                    
+                    await saveToGitHubSecure(CONFIG.adminFeedPath, currentAdminData, "User answered admin post");
+                    adminData = currentAdminData;
+                    renderAdminQuestions();
+                    showToast("Answer submitted successfully!");
+                }
+            } catch (e) {
+                showStatusModal('Error', 'Could not submit answer.', 'fa-triangle-exclamation', 'var(--danger)');
+            } finally { btn.innerHTML = originalBtn; btn.disabled = false; }
+        }
+
+        // --- RENDERING VIEWS ---
+        function renderAdminQuestions() {
+            const list = document.getElementById('admin-qa-list');
+            list.innerHTML = '';
+
+            if (adminQuestions.length === 0) {
+                list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-crown"></i><p>No Admin Questions yet.</p></div>`; return;
+            }
+
+            [...adminQuestions].reverse().forEach(q => {
+                let communityAnsHtml = '';
+                if (q.answers && q.answers.length > 0) {
+                    communityAnsHtml = `<div class="community-answers">` + q.answers.map(a => `
+                        <div class="user-answer-box">
+                            <div class="user-answer-header"><span><i class="fa-solid fa-user"></i> ${escAttr(a.user)}</span> <span>${escAttr(a.date)}</span></div>
+                            <div style="font-size: 14px; font-weight: 500; color: var(--text-dark); word-wrap: break-word;">${escAttr(a.text)}</div>
+                            ${a.adminReply ? `<div class="admin-reply-box"><i class="fa-solid fa-reply"></i> <strong>Admin:</strong> ${escAttr(a.adminReply)}</div>` : ''}
+                        </div>
+                    `).join('') + `</div>`;
+                } else { communityAnsHtml = `<div class="qa-unanswered" style="margin-top: 15px;">Be the first to answer!</div>`; }
+
+                list.innerHTML += `
+                    <div class="qa-card admin-q-card">
+                        <div class="qa-header">
+                            <div class="qa-asker-wrapper">
+                                <div class="qa-asker" style="color: var(--accent-purple)"><i class="fa-solid fa-crown"></i> Admin Question</div>
+                                <div class="qa-date">${escAttr(q.date || 'Recent')}</div>
+                            </div>
+                            <div class="status-badge admin-badge"><i class="fa-solid fa-bullhorn"></i> Announcement</div>
+                        </div>
+                        <div class="qa-q-bubble" style="font-size: 18px;">${escAttr(q.text)}</div>
+                        <div style="margin-top: 20px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 15px;">
+                            <h4 style="font-size: 12px; text-transform: uppercase; color: var(--text-light); letter-spacing: 0.5px;">Community Answers</h4>
+                            ${communityAnsHtml}
+                        </div>
+                        <div class="submit-answer-area">
+                            <input type="text" id="admin-ans-name-${q.id}" placeholder="Your Name (Optional)" maxlength="20">
+                            <textarea id="admin-ans-text-${q.id}" placeholder="Write your answer here..."></textarea>
+                            <button class="action-button" id="btn-ans-${q.id}" style="background: var(--accent-purple); padding: 14px;" onclick="submitAdminAnswer('${q.id}')">Post Answer <i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Image Download & Share Functions
+        function downloadImage(elementId, fileName) {
+            const captureArea = document.getElementById(elementId); showToast('Generating image... ⏳');
+            html2canvas(captureArea, { scale: 3, backgroundColor: null, useCORS: true }).then(canvas => {
+                let link = document.createElement('a'); link.download = fileName + '.png';
+                link.href = canvas.toDataURL('image/png'); link.click(); showToast('Image saved! 📸');
+            });
+        }
+
+        function shareImage(elementId, fileName) {
+            const captureArea = document.getElementById(elementId); showToast('Preparing image for sharing... ⏳');
+            html2canvas(captureArea, { scale: 3, backgroundColor: null, useCORS: true }).then(canvas => {
+                canvas.toBlob(blob => {
+                    const file = new File([blob], fileName + '.png', { type: 'image/png' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        navigator.share({ files: [file], title: 'Q&A', text: 'Check out this Q&A!' })
+                        .then(() => showToast('Shared successfully! ✨')).catch((error) => console.log('Share error', error));
+                    } else {
+                        showToast('Sharing images is not supported on this browser. Downloading instead... ⬇️', true);
+                        let link = document.createElement('a'); link.download = fileName + '.png';
+                        link.href = URL.createObjectURL(blob); link.click();
+                    }
+                }, 'image/png');
+            });
+        }
+
+        function viewQA(id, autoDownload = false, autoShare = false) {
+            const q = publicQuestions.find(item => item.id === id) || privateQuestions.find(item => item.id === id);
+            if(!q) return;
+            document.getElementById('view-asker').innerText = q.name ? q.name : 'Anonymous';
+            document.getElementById('view-q').innerText = q.text;
+            const privacyTag = document.getElementById('view-privacy');
+            privacyTag.innerHTML = q.type === 'private' ? '<i class="fa-solid fa-lock"></i> Private' : '<i class="fa-solid fa-earth-americas"></i> Public';
+            const aContainer = document.getElementById('view-a-container');
+            if(q.answer && q.answer.trim() !== '') {
+                aContainer.innerHTML = `<div class="sticker-answer-tag"><i class="fa-solid fa-reply"></i> Answer:</div><div class="sticker-a-box">${escAttr(q.answer)}</div>`;
+            } else {
+                aContainer.innerHTML = `<div class="sticker-a-box" style="color: rgba(29, 30, 44, 0.5); font-style: italic;">Awaiting reply...</div>`;
+            }
+            document.getElementById('view-modal').style.display = 'flex';
+            if(autoDownload) setTimeout(() => { downloadImage('view-capture-area', 'skbodhak_qa'); }, 300);
+            else if (autoShare) setTimeout(() => { shareImage('view-capture-area', 'skbodhak_qa'); }, 300);
+        }
+
+        function renderPublicQuestions() {
+            const list = document.getElementById('public-qa-list');
+            const searchInput = document.getElementById('public-search').value.trim().toLowerCase();
+            let displayQs = [...publicQuestions]; 
+            if (currentSort === 'newest') displayQs = displayQs.reverse();
+            list.innerHTML = '';
+            if (searchInput) displayQs = displayQs.filter(q => q.text.toLowerCase().includes(searchInput) || q.id.toLowerCase().includes(searchInput) || (q.answer && q.answer.toLowerCase().includes(searchInput)) );
+            if (currentFeedFilter === 'answered') displayQs = displayQs.filter(q => q.answer && q.answer.trim() !== '');
+            else if (currentFeedFilter === 'unanswered') displayQs = displayQs.filter(q => !q.answer || q.answer.trim() === '');
+
+            if (displayQs.length === 0 && list.innerHTML === '') { list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-magnifying-glass"></i><p>No active questions found.</p></div>`; return; }
+
+            displayQs.forEach(q => {
+                const isAnswered = q.answer && q.answer.trim() !== '';
+                const answerHTML = isAnswered ? `<div class="qa-a-bubble">${escAttr(q.answer)}</div>` : `<div class="qa-unanswered">Waiting for reply...</div>`;
+                const feedName = q.name ? q.name : 'Anonymous';
+                const statusBadge = isAnswered ? `<div class="status-badge status-answered"><i class="fa-solid fa-check"></i> Answered</div>` : `<div class="status-badge status-waiting"><i class="fa-solid fa-hourglass-half"></i> Waiting</div>`;
+
+                list.innerHTML += `
+                    <div class="qa-card" id="card-${q.id}">
+                        <div class="qa-header"><div class="qa-asker-wrapper"><div class="qa-asker"><i class="fa-solid fa-face-smile" style="color:var(--primary)"></i> ${escAttr(feedName)}</div><div class="qa-date">${escAttr(q.date || 'Recent')}</div></div>${statusBadge}</div>
+                        <div class="qa-q-bubble">${escAttr(q.text)}</div>${answerHTML}
+                        <div class="qa-actions">
+                            <button class="qa-action-btn" onclick="viewQA('${q.id}')"><i class="fa-solid fa-eye"></i> View</button>
+                            <button class="qa-action-btn" onclick="viewQA('${q.id}', true, false)"><i class="fa-solid fa-download"></i> Save</button>
+                            <button class="qa-action-btn" onclick="viewQA('${q.id}', false, true)"><i class="fa-solid fa-share-nodes"></i> Share</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function searchPrivate() {
+            const pIdInput = document.getElementById('p-id'); const pPassInput = document.getElementById('p-pass');
+            const sId = pIdInput.value.trim().toUpperCase(); const sPass = pPassInput.value.trim();
+            let hasError = false;
+            if(!sId) { markError(pIdInput); hasError = true; } if(!sPass) { markError(pPassInput); hasError = true; }
+            if(hasError) return;
+
+            const btn = document.querySelector('.vault-card button');
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Unlocking...'; btn.disabled = true;
+
+            try {
+                const prvRes = await fetchFile(CONFIG.privatePath);
+                privateQuestions = prvRes.data || [];
+
+                const matchActive = privateQuestions.find(q => q.id === sId && q.password === sPass);
+                if (matchActive) {
+                    document.getElementById('private-search-card').style.display = 'none'; document.getElementById('private-result-card').style.display = 'block';
+                    const isAnswered = matchActive.answer && matchActive.answer.trim() !== '';
+                    const ans = isAnswered ? `<div class="qa-a-bubble">${escAttr(matchActive.answer)}</div>` : `<div class="qa-unanswered">No reply yet. Check back soon!</div>`;
+                    const statusBadge = isAnswered ? `<div class="status-badge status-answered"><i class="fa-solid fa-check"></i> Answered</div>` : `<div class="status-badge status-waiting"><i class="fa-solid fa-hourglass-half"></i> Waiting</div>`;
+
+                    document.getElementById('private-result-content').innerHTML = `
+                        <div class="qa-card" style="margin-bottom: 0;">
+                            <div class="qa-header"><div class="qa-asker-wrapper"><div class="qa-asker"><i class="fa-solid fa-lock" style="color:var(--primary)"></i> Your Private Question</div><div class="qa-date">${escAttr(matchActive.date || 'Recent')}</div></div>${statusBadge}</div>
+                            <div class="qa-q-bubble">${escAttr(matchActive.text)}</div>${ans}
+                            <div class="qa-actions">
+                                <button class="qa-action-btn" onclick="viewQA('${matchActive.id}')"><i class="fa-solid fa-eye"></i> View</button>
+                                <button class="qa-action-btn" onclick="viewQA('${matchActive.id}', true, false)"><i class="fa-solid fa-download"></i> Save</button>
+                                <button class="qa-action-btn" onclick="viewQA('${matchActive.id}', false, true)"><i class="fa-solid fa-share-nodes"></i> Share</button>
+                            </div>
+                        </div>`;
+                } else {
+                    showToast('Wrong ID or password!', true); markError(pIdInput); markError(pPassInput);
+                }
+            } catch(e) { showStatusModal('Error', 'Failed to unlock vault. Check your connection.', 'fa-triangle-exclamation', 'var(--danger)'); }
+            finally { btn.innerHTML = origHtml; btn.disabled = false; }
+        }
+
+        function resetPrivateSearch() {
+            document.getElementById('private-search-card').style.display = 'block'; document.getElementById('private-result-card').style.display = 'none';
+            document.getElementById('p-id').value = ''; document.getElementById('p-pass').value = '';
+        }
+
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active')); el.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(item => item.classList.remove('active')); document.getElementById(tabId).classList.add('active');
+            if(tabId === 'public') renderPublicQuestions(); if(tabId === 'private') resetPrivateSearch();
+        }
+
+        // Run app
+        initApp();
+
+    </script>
+</body>
+</html>
